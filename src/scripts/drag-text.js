@@ -419,6 +419,17 @@ H5P.DragText = (function ($, Question, ConfirmationDialog) {
 
         // Focus top of the task for natural navigation
         self.$introduction.parent().focus();
+
+        // Emit screenshot
+        setTimeout(function () {
+          if (H5P && H5P.KLScreenshot) {
+            H5P.KLScreenshot.takeScreenshot(
+              self,
+              self.$introduction.get(0).closest('.h5p-container')
+            );
+          }
+        }, 1000); // Give result time to appear
+
       }, !self.params.behaviour.instantFeedback);
     }
 
