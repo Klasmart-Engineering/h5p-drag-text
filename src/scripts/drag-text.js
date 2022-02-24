@@ -845,14 +845,55 @@ H5P.DragText = (function ($, Question, ConfirmationDialog) {
       tabindex: '-1'
     }).draggable({
       revert: function(isValidDrop) {
+        // Workaround for Chrome on Android to allow tap instead of drag
+        if (self.startPosition) {
+          // Was a fake drag by only 1 pixel, initiate tapping
+          if (draggable.insideDropzone) {
+            self.keyboardDroppableSelected(
+              { element: draggable.insideDropzone.$dropzone.get(0) }
+            );
+          }
+          else {
+            self.keyboardDraggableSelected({element: this.get(0)})
+          }
+          return;
+        }
+
         if (!isValidDrop) {
           self.revert(draggable);
         }
         return false;
       },
-      drag: self.propagateDragEvent('drag', self),
-      start: self.propagateDragEvent('start', self),
+      drag: function (event) {
+        if (
+          self.startPosition &&
+          Math.abs(self.startPosition.x - event.clientX) < 2 &&
+          Math.abs(self.startPosition.y - event.clientY) < 2
+        ) {
+          return; // Was a fake drag by only 1 pixel
+        }
+        self.startPosition = null;
+        self.propagateDragEvent('drag', self)
+      },
+      start: function (event) {
+        /*
+         * On mobile, jQueryUI fires 'start' even though one
+         * barely touches the screen. In consequence, it always registers a drag
+         * movement and one cannot use the tap selection alternatively.
+         * Workaround will keep track of start position and ignore all drag
+         * movements around 1 pixel of the start position.
+         */
+        if (Util.isMobile()) {
+          self.startPosition = { x: event.clientX, y: event.clientY }
+        }
+        self.propagateDragEvent('start', self)
+      },
       stop: function (event) {
+        if (self.startPosition) {
+          self.startPosition = null;
+          return; // Was a fake drag by only 1 pixel
+        }
+
         self.trigger('stop', {
           element: draggable.getElement(),
           target: event.target

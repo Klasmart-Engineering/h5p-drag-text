@@ -106,11 +106,20 @@ var createElementWithTextPart = function(text) {
   return  el;
 };
 
+/**
+ * Determine whether is running on Chrome on Android.
+ * @return {boolean} True, if running on Chrome on Android.
+ */
+var isMobile = function () {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile/i.test(navigator.userAgent);
+};
+
 export default {
   curry: curry,
   cleanCharacter: cleanCharacter,
   startsWith: startsWith,
   endsWith: endsWith,
   shuffle: shuffle,
-  createElementWithTextPart: createElementWithTextPart
+  createElementWithTextPart: createElementWithTextPart,
+  isMobile: isMobile
 };
