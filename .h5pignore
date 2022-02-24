@@ -12,4 +12,6 @@ webpack.dev.config.js
 README.md
 CONTRIBUTING.md
 package.json
+package-lock.json
+LICENSE.md
 crowdin.yml
