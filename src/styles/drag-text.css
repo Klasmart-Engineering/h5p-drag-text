@@ -1,5 +1,6 @@
 /* The main containers for the module, specific to this module. */
 .h5p-drag-text {
+  font-family: 'Roboto', sans-serif;
   position: relative;
   background: rgba(255, 255, 255, 0.9);
   overflow: hidden;
