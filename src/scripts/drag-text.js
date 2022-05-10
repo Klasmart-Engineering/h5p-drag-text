@@ -104,9 +104,12 @@ H5P.DragText = (function ($, Question, ConfirmationDialog) {
     }, params);
 
     this.contentData = contentData;
-    if (this.contentData !== undefined && this.contentData.previousState !== undefined && this.contentData.previousState.length !== undefined) {
-      this.previousState = this.contentData.previousState;
-    }
+
+    this.previousState = (this.contentData && this.contentData.previousState) ?
+      this.contentData.previousState :
+      {};
+
+    this.setViewState(this.previousState.viewState || 'task');
 
     // Keeps track of if Question has been answered
     this.answered = false;
@@ -330,6 +333,14 @@ H5P.DragText = (function ($, Question, ConfirmationDialog) {
 
     // Register buttons
     this.addButtons();
+
+    if (this.previousState.viewState === 'results') {
+      this.handleCheckAnswer({ skipXAPI: true });
+    }
+    else if (this.previousState.viewState === 'solutions') {
+      this.handleCheckAnswer({ skipXAPI: true });
+      this.handleShowSolutions();
+    }
   };
 
   /**
@@ -399,77 +410,109 @@ H5P.DragText = (function ($, Question, ConfirmationDialog) {
     if (self.params.behaviour.enableCheckButton) {
       // Checking answer button
       self.addButton('check-answer', self.params.checkAnswer, function () {
-        self.answered = true;
-        self.removeAllElementsFromDragControl();
-
-        if (!self.showEvaluation()) {
-          if (self.params.behaviour.enableRetry) {
-            self.showButton('try-again');
-          }
-          if (self.params.behaviour.enableSolutionsButton) {
-            self.showButton('show-solution');
-          }
-          self.hideButton('check-answer');
-          self.disableDraggables();
-        } else {
-          self.hideButton('show-solution');
-          self.hideButton('try-again');
-          self.hideButton('check-answer');
-        }
-
-        // Focus top of the task for natural navigation
-        self.$introduction.parent().focus();
-
-        // Emit screenshot
-        setTimeout(function () {
-          if (H5P && H5P.KLScreenshot) {
-            H5P.KLScreenshot.takeScreenshot(
-              self,
-              self.$introduction.get(0).closest('.h5p-container')
-            );
-          }
-        }, 1000); // Give result time to appear
-
+        self.handleCheckAnswer();
       }, !self.params.behaviour.instantFeedback);
     }
 
     //Show Solution button
     self.addButton('show-solution', self.params.showSolution, function () {
-      self.droppables.forEach(function (droppable) {
-        droppable.showSolution();
-      });
-      self.draggables.forEach(draggable => self.setDraggableAriaLabel(draggable));
-      self.disableDraggables();
-      self.removeAllDroppablesFromControls();
-      self.hideButton('show-solution');
+      self.handleShowSolutions();
     }, self.initShowShowSolutionButton || false);
 
     //Retry button
     self.addButton('try-again', self.params.tryAgain, function () {
-      // Reset and shuffle draggables if Question is answered
-      if (self.answered) {
-        // move draggables to original container
-        self.resetDraggables();
-      }
-      self.answered = false;
-
-      self.hideEvaluation();
-      self.hideExplanation();
-
-      self.hideButton('try-again');
-      self.hideButton('show-solution');
-
-      if (self.params.behaviour.instantFeedback) {
-        self.enableAllDropzonesAndDraggables();
-      } else {
-        self.showButton('check-answer');
-        self.enableDraggables();
-      }
-      self.hideAllSolutions();
-
-      self.stopWatch.reset();
-      self.read(self.params.taskDescription);
+      self.handleRetry();
     }, self.initShowTryAgainButton || false);
+  };
+
+  /**
+   * Handle check answer.
+   * @param {object} [params={}] Parameters.
+   * @param {boolean} [params.skipXAPI] If true, skip XAPI.
+   */
+  DragText.prototype.handleCheckAnswer = function (params = {}) {
+    const self = this;
+
+    self.setViewState('results');
+
+    self.answered = true;
+    self.removeAllElementsFromDragControl();
+
+    if (!self.showEvaluation(params.skipXAPI)) {
+      if (self.params.behaviour.enableRetry) {
+        self.showButton('try-again');
+      }
+      if (self.params.behaviour.enableSolutionsButton) {
+        self.showButton('show-solution');
+      }
+      self.hideButton('check-answer');
+      self.disableDraggables();
+    } else {
+      self.hideButton('show-solution');
+      self.hideButton('try-again');
+      self.hideButton('check-answer');
+    }
+
+    // Focus top of the task for natural navigation
+    self.$introduction.parent().focus();
+
+    if (!params.skipXAPI) {
+      // Emit screenshot
+      setTimeout(function () {
+        if (H5P && H5P.KLScreenshot) {
+          H5P.KLScreenshot.takeScreenshot(
+            self,
+            self.$introduction.get(0).closest('.h5p-container')
+          );
+        }
+      }, 1000); // Give result time to appear
+    }
+  };
+
+  /**
+   * Handle show solutions.
+   */
+  DragText.prototype.handleShowSolutions = function () {
+    this.setViewState('solutions');
+
+    this.droppables.forEach(function (droppable) {
+      droppable.showSolution();
+    });
+    this.draggables.forEach(draggable => this.setDraggableAriaLabel(draggable));
+    this.disableDraggables();
+    this.removeAllDroppablesFromControls();
+    this.hideButton('show-solution');
+  };
+
+  /**
+   * Handle show solutions.
+   */
+  DragText.prototype.handleRetry = function () {
+    this.setViewState('task');
+
+    // Reset and shuffle draggables if Question is answered
+    if (this.answered) {
+      // move draggables to original container
+      this.resetDraggables();
+    }
+    this.answered = false;
+
+    this.hideEvaluation();
+    this.hideExplanation();
+
+    this.hideButton('try-again');
+    this.hideButton('show-solution');
+
+    if (this.params.behaviour.instantFeedback) {
+      this.enableAllDropzonesAndDraggables();
+    } else {
+      this.showButton('check-answer');
+      this.enableDraggables();
+    }
+    this.hideAllSolutions();
+
+    this.stopWatch.reset();
+    this.read(this.params.taskDescription);
   };
 
   /**
@@ -915,7 +958,11 @@ H5P.DragText = (function ($, Question, ConfirmationDialog) {
       'class': 'h5p-hidden-read'
     }));
 
-    var draggable = new Draggable(answer, $draggable, self.draggables.length);
+    var draggable = new Draggable(answer, $draggable, self.draggables.length, {
+      storeState: () => {
+        this.trigger('kllStoreSessionState', undefined, { bubbles: true, external: true });
+      }
+    });
     draggable.on('addedToZone', function () {
       self.triggerXAPI('interacted');
     });
@@ -1292,6 +1339,9 @@ H5P.DragText = (function ($, Question, ConfirmationDialog) {
    */
   DragText.prototype.resetTask = function () {
     var self = this;
+
+    self.setViewState('task');
+
     // Reset task answer
     self.answered = false;
     self.instantFeedbackEvaluationFilled = false;
@@ -1330,12 +1380,15 @@ H5P.DragText = (function ($, Question, ConfirmationDialog) {
       return undefined;
     }
 
-    return this.draggables
-      .filter(draggable => (draggable.getInsideDropzone() !== null))
-      .map(draggable => ({
-        draggable: draggable.getInitialIndex(),
-        droppable: this.droppables.indexOf(draggable.getInsideDropzone())
-      }));
+    return {
+      draggables: this.draggables
+        .filter(draggable => (draggable.getInsideDropzone() !== null))
+        .map(draggable => ({
+          draggable: draggable.getInitialIndex(),
+          droppable: this.droppables.indexOf(draggable.getInsideDropzone())
+        })),
+      viewState: this.viewState
+    };
   };
 
   /**
@@ -1350,7 +1403,7 @@ H5P.DragText = (function ($, Question, ConfirmationDialog) {
     }
 
     // Select words from user state
-    this.previousState.forEach(indexes => {
+    (this.previousState.draggables || []).forEach(indexes => {
       if (!self.isValidIndex(indexes.draggable) || !self.isValidIndex(indexes.droppable)) {
         throw new Error('Stored user state is invalid');
       }
@@ -1531,6 +1584,24 @@ H5P.DragText = (function ($, Question, ConfirmationDialog) {
       .map(solution => solution.text)
       .join('[,]');
   };
+
+  /**
+   * Set view state.
+   * @param {string} state View state.
+   */
+  DragText.prototype.setViewState = function (state) {
+    if (DragText.VIEW_STATES.indexOf(state) === -1) {
+      return;
+    }
+
+    // Kidsloop Live session storage will listen
+    this.trigger('kllStoreSessionState', undefined, { bubbles: true, external: true });
+
+    this.viewState = state;
+  };
+
+  /** @constant {string[]} view state names*/
+  DragText.VIEW_STATES = ['task', 'results', 'solutions'];
 
   return DragText;
 

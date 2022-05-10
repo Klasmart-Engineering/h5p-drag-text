@@ -9,8 +9,12 @@ H5P.TextDraggable = (function ($) {
    * @param {jQuery} draggable Draggable object.
    * @param {number} index
    */
-  function Draggable(text, draggable, index) {
+  function Draggable(text, draggable, index, callbacks) {
     H5P.EventDispatcher.call(this);
+
+    this.callbacks = callbacks || {};
+    this.callbacks.storeState = this.callbacks.storeState || (function() {});
+
     var self = this;
     self.text = text;
     self.insideDropzone = null;
@@ -107,6 +111,8 @@ H5P.TextDraggable = (function ($) {
     } else {
       this.$draggable.removeClass(DRAGGABLE_DROPPED);
     }
+
+    this.callbacks.storeState();
   };
 
   /**
