@@ -449,7 +449,7 @@ H5P.DragText = (function ($, Question, ConfirmationDialog) {
       self.disableDraggables();
     } else {
       self.hideButton('show-solution');
-      self.hideButton('try-again');
+      self.showButton('try-again');
       self.hideButton('check-answer');
     }
 
