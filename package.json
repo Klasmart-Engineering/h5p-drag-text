@@ -19,7 +19,7 @@
     "ava": "^2.2.0",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
-    "babel-loader": "^6.3.2",
+    "babel-loader": "^9.1.0",
     "babel-plugin-transform-object-assign": "^6.22.0",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-latest": "^6.22.0",
@@ -27,7 +27,7 @@
     "browser-env": "^2.0.30",
     "cross-env": "^4.0.0",
     "css-loader": "^3.0.0",
-    "extract-text-webpack-plugin": "^2.1.0",
+    "extract-text-webpack-plugin": "^3.0.2",
     "h5p-lib-controls": "0.0.15",
     "inject-loader": "^3.0.0",
     "raw-loader": "^0.5.1",
@@ -36,7 +36,7 @@
     "style-loader": "^0.13.2",
     "timer-machine": "^1.1.0",
     "url-loader": "^2.0.1",
-    "webpack": "^2.2.1"
+    "webpack": "^5.75.0"
   },
   "ava": {
     "babel": {
